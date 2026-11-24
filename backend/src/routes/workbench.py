@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from src.config.settings import connect
 from src.constants.domain import Role
-from src.controllers.exports import holdout_csv, tickets_csv
-from src.middlewares.auth import analyst, identity, owner
+from src.controllers.exports import batch_csv, holdout_csv, tickets_csv
+from src.middlewares.auth import analyst, dispatcher, identity, owner
 from src.models.records import RUN_FIELDS, raw_samples
-from src.schemas.inputs import Decision, Plan, Review, Sample, Ticket
-from src.services import workbench
+from src.schemas.inputs import BatchCreate, Decision, Plan, Receipts, Review, Sample, Ticket
+from src.services import dispatch, workbench
 
 router = APIRouter()
 
@@ -104,6 +104,36 @@ def export_tickets(actor=Depends(identity)):
     with connect() as db:
         dispatched = db.execute('SELECT * FROM tickets WHERE decision IS NOT NULL ORDER BY code').fetchall()
     return tickets_csv(dispatched)
+
+
+@router.post('/batches', status_code=201)
+def add_batch(payload: BatchCreate, actor=Depends(dispatcher)):
+    with connect() as db:
+        return dispatch.create_batch(db, payload, actor['username'])
+
+
+@router.get('/batches')
+def batches(actor=Depends(identity)):
+    with connect() as db:
+        return dispatch.list_batches(db)
+
+
+@router.get('/batches/{batch_id}')
+def batch(batch_id: int, actor=Depends(identity)):
+    with connect() as db:
+        return dispatch.batch_detail(db, batch_id)
+
+
+@router.get('/batches/{batch_id}/export')
+def export_batch(batch_id: int, actor=Depends(identity)):
+    with connect() as db:
+        return batch_csv(dispatch.batch_detail(db, batch_id))
+
+
+@router.post('/batches/{batch_id}/receipts')
+def receipts(batch_id: int, payload: Receipts, actor=Depends(dispatcher)):
+    with connect() as db:
+        return dispatch.record_receipts(db, batch_id, payload, actor['username'])
 
 
 @router.get('/audit')

@@ -3,7 +3,8 @@ import {empty, header, table} from '../components/common/ui.js';
 import {escape as h, timestamp} from '../utils/text.js';
 
 const actions = {'sample.create': '登记历史工票', 'sample.update': '校订历史工票', 'plan.create': '保存参数版本',
-  'run.queue': '提交评估', 'run.publish': '发布规则', 'ticket.create': '生成分诊建议', 'ticket.decide': '签发工序'};
+  'run.queue': '提交评估', 'run.publish': '发布规则', 'ticket.create': '生成分诊建议', 'ticket.decide': '签发工序',
+  'batch.create': '开立派工批次', 'receipt.record': '登记批次回执'};
 
 export async function audit(main) {
   const list = await read('/audit');

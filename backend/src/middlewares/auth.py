@@ -32,5 +32,14 @@ def permit(role):
     return allowed
 
 
+def permit_any(*roles):
+    def allowed(actor=Depends(identity)):
+        if actor['role'] not in roles:
+            raise HTTPException(403, '当前席位无权执行此操作')
+        return actor
+    return allowed
+
+
 analyst = permit(Role.analyst)
 owner = permit(Role.owner)
+dispatcher = permit_any(Role.owner, Role.viewer)

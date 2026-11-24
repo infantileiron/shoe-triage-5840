@@ -60,3 +60,16 @@ class Review(Payload):
 
 class Decision(Review):
     decision: Route
+
+
+class BatchCreate(Payload):
+    station: Route
+
+
+class Receipts(Payload):
+    codes: Annotated[list[Code], Field(min_length=1, max_length=200)]
+
+    @field_validator('codes')
+    @classmethod
+    def unique_codes(cls, values):
+        return list(dict.fromkeys(values))

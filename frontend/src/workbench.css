@@ -177,6 +177,17 @@ summary{cursor:pointer;color:var(--rust);font-weight:600}
 .path-list li{display:flex;justify-content:space-between;align-items:center;gap:9px;margin:0;padding:5px 9px;font-size:12px}
 .path-list strong{font-family:var(--mono);color:var(--rust);font-weight:600}
 .active-strip{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:10px 13px;border-block:1px dashed var(--line);font-size:13px}
+.batch-sheet{margin-bottom:16px}
+.batch-pending{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:11px 17px;border-bottom:1px solid var(--line);font-size:13px;color:var(--soft)}
+.batch-pending b{color:var(--ink)}
+.batch-list{display:grid}
+.batch{display:grid;gap:9px;padding:13px 17px;border-bottom:1px solid var(--line)}
+.batch:last-child{border-bottom:0}
+.batch-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.batch-head>div{display:flex;align-items:center;gap:10px}
+.batch-meta{display:flex;gap:16px;flex-wrap:wrap;color:var(--soft);font-size:12px}
+.batch-detail{border-top:1px dashed var(--line);padding-top:10px}
+.batch-detail .digest{padding:8px 0 2px}
 .ticket-list{display:grid;gap:14px}
 .dispatch h2{margin-top:3px}
 .dispatch-body{display:grid;grid-template-columns:1fr 1fr;gap:17px;padding:15px 17px}

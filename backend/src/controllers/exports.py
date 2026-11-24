@@ -12,13 +12,14 @@ def safe_cell(value):
     return value
 
 
-def csv_file(filename, header, rows):
+def csv_file(filename, header, rows, headers=None):
     buffer = StringIO()
     writer = csv.writer(buffer)
     writer.writerow(header)
     writer.writerows([safe_cell(value) for value in row] for row in rows)
     return Response(buffer.getvalue().encode('utf-8-sig'), media_type='text/csv; charset=utf-8',
-                    headers={'Content-Disposition': f'attachment; filename="{filename}"'})
+                    headers={'Content-Disposition': f'attachment; filename="{filename}"',
+                             **(headers or {})})
 
 
 def path_text(steps):
@@ -44,3 +45,13 @@ def tickets_csv(tickets):
     return csv_file('triage-dispatch.csv', ['分诊单', '规则运行', '团队', '鞋型', '模型建议', '最终处置', '签发说明', '签发工号'],
                     ((row['code'], row['run_id'], row['studio'], row['shoe'], ROUTE_NAMES[row['prediction']],
                       ROUTE_NAMES[row['decision']], row['note'], row['reviewed_by']) for row in tickets))
+
+
+def batch_csv(batch):
+    # Membership is frozen at creation, so every download of a batch is byte-identical.
+    return csv_file(f'dispatch-batch-{batch["id"]}.csv',
+                    ['批次', '分诊单', '规则运行', '团队', '鞋型', '模型建议', '最终处置', '签发说明', '签发工号'],
+                    ((batch['id'], row['code'], row['run_id'], row['studio'], row['shoe'],
+                      ROUTE_NAMES[row['prediction']], ROUTE_NAMES[row['decision']], row['note'],
+                      row['reviewed_by']) for row in batch['items']),
+                    {'ETag': f'"{batch["digest"]}"'})
