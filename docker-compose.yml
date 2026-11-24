@@ -1,0 +1,81 @@
+name: ${COMPOSE_PROJECT_NAME:-shoe-triage}
+x-app: &app
+  build: ./backend
+  restart: unless-stopped
+  environment:
+    DATABASE_URL: postgresql://triage:${POSTGRES_PASSWORD:-triage_local_5205}@db:5432/triage
+    REDIS_URL: redis://redis:6379/0
+    JWT_SECRET: ${JWT_SECRET:-shoe-triage-local-only-change-before-deployment-5205}
+    SEED_DEMO: ${SEED_DEMO:-true}
+  volumes:
+    - artifacts:/artifacts
+  depends_on:
+    db: {condition: service_healthy}
+    redis: {condition: service_healthy}
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-shoe-triage}-db
+    environment:
+      POSTGRES_DB: triage
+      POSTGRES_USER: triage
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-triage_local_5205}
+    ports: ["127.0.0.1:${DB_PORT:-17774}:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U triage -d triage"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-shoe-triage}-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["redis_data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  backend:
+    <<: *app
+    container_name: ${COMPOSE_PROJECT_NAME:-shoe-triage}-backend
+    ports: ["127.0.0.1:${BACKEND_PORT:-19274}:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 3s
+      timeout: 4s
+      retries: 25
+  worker:
+    <<: *app
+    container_name: ${COMPOSE_PROJECT_NAME:-shoe-triage}-worker
+    command: ["python", "-m", "src.worker"]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,time; assert time.time()-os.stat('/artifacts/worker.heartbeat').st_mtime<30"]
+      interval: 3s
+      timeout: 3s
+      retries: 25
+  frontend:
+    build: ./frontend
+    container_name: ${COMPOSE_PROJECT_NAME:-shoe-triage}-frontend
+    ports: ["127.0.0.1:${FRONTEND_PORT:-18274}:80"]
+    depends_on:
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  postgres_data:
+  redis_data:
+  artifacts:
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${NETWORK_SUBNET:-10.221.205.0/24}
